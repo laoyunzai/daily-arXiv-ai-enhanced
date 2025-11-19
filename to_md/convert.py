@@ -1,6 +1,7 @@
-import json
 import argparse
+import json
 import os
+import re
 from itertools import count
 
 if __name__ == "__main__":
@@ -8,8 +9,8 @@ if __name__ == "__main__":
     parser.add_argument("--data", type=str, help="Path to the jsonline file")
     args = parser.parse_args()
     data = []
-    preference = os.environ.get('CATEGORIES', 'cs.CV, cs.CL').split(',')
-    preference = list(map(lambda x: x.strip(), preference))
+    preference = re.split(r"[,\n]+", os.environ.get('CATEGORIES', 'cs.CV, cs.CL'))
+    preference = list(filter(None, map(lambda x: x.strip(), preference)))
     def rank(cate):
         if cate in preference:
             return preference.index(cate)
