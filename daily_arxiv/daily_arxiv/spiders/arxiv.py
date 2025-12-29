@@ -1,21 +1,34 @@
-import scrapy
 import os
 import re
+from typing import List
+
+import scrapy
 
 
 class ArxivSpider(scrapy.Spider):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        categories = os.environ.get("CATEGORIES", "cs.CV")
-        categories = categories.split(",")
-        # 保存目标分类列表，用于后续验证
-        self.target_categories = set(map(str.strip, categories))
+        raw_categories = os.environ.get("CATEGORIES", "cs.CV")
+        self.target_categories = self._parse_categories(raw_categories)
+
+        # 记录最终解析到的分类，方便排查 Actions 变量是否生效
+        self.logger.info(
+            "Using arXiv categories: %s",
+            ", ".join(sorted(self.target_categories)) or "<none>",
+        )
         self.start_urls = [
             f"https://arxiv.org/list/{cat}/new" for cat in self.target_categories
         ]  # 起始URL（计算机科学领域的最新论文）
 
     name = "arxiv"  # 爬虫名称
     allowed_domains = ["arxiv.org"]  # 允许爬取的域名
+
+    @staticmethod
+    def _parse_categories(raw_categories: str) -> List[str]:
+        """将环境变量解析为分类列表，兼容逗号、换行等分隔符"""
+
+        parts = re.split(r"[,\n]+", raw_categories)
+        return [part.strip() for part in parts if part.strip()]
 
     def parse(self, response):
         # 提取每篇论文的信息
